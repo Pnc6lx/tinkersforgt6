@@ -46,7 +46,14 @@ spotless {
             'src/**/*.mcmeta'
         )
 
-        prettier().config([
+        // Spotless cannot auto-detect npm on this machine (no NVM_BIN / NODE_PATH, and its PATH scan
+        // fails here), so allow an explicit override via the `npmExec` Gradle property. Set it in
+        // ~/.gradle/gradle.properties (user-level, not in the repo) or pass -PnpmExec=... to gradlew.
+        def npmStep = prettier()
+        if (project.hasProperty('npmExec')) {
+            npmStep.npmExecutable(project.property('npmExec'))
+        }
+        npmStep.config([
             parser: 'json',
             printWidth: 100,
             tabWidth: 2,

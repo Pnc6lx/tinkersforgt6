@@ -1,0 +1,46 @@
+# TinkersGT6 - extra harvest level names for the levels GregTech 6 materials can reach.
+# Harvest level N is looked up as gui.mining(N+1). TConstruct ships 1-6; with
+# IguanaTweaksTConstruct active (harvestLevelMulIguanaTweaks = 2.0) GT6 qualities reach 30.
+gui.mining7=§bTier 6§r
+gui.mining8=§bTier 7§r
+gui.mining9=§aTier 8§r
+gui.mining10=§aTier 9§r
+gui.mining11=§aTier 10§r
+gui.mining12=§eTier 11§r
+gui.mining13=§eTier 12§r
+gui.mining14=§eTier 13§r
+gui.mining15=§6Tier 14§r
+gui.mining16=§6Tier 15§r
+gui.mining17=§6Tier 16§r
+gui.mining18=§cTier 17§r
+gui.mining19=§cTier 18§r
+gui.mining20=§cTier 19§r
+gui.mining21=§cTier 20§r
+gui.mining22=§dTier 21§r
+gui.mining23=§dTier 22§r
+gui.mining24=§dTier 23§r
+gui.mining25=§dTier 24§r
+gui.mining26=§5Tier 25§r
+gui.mining27=§5Tier 26§r
+gui.mining28=§5Tier 27§r
+gui.mining29=§5Tier 28§r
+gui.mining30=§5Tier 29§r
+gui.mining31=§5Tier 30§r
+
+# GregTech 6 materials can carry enchantments above the vanilla maximum (up to 10).
+# Without these keys the tooltip falls back to the raw "enchantment.level.N" key.
+enchantment.level.1=I
+enchantment.level.2=II
+enchantment.level.3=III
+enchantment.level.4=IV
+enchantment.level.5=V
+enchantment.level.6=VI
+enchantment.level.7=VII
+enchantment.level.8=VIII
+enchantment.level.9=IX
+enchantment.level.10=X
+enchantment.level.11=XI
+enchantment.level.12=XII
+enchantment.level.13=XIII
+enchantment.level.14=XIV
+enchantment.level.15=XV

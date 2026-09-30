@@ -34,5 +34,25 @@
  * For more details, see https://docs.gradle.org/8.0.1/userguide/java_library_plugin.html#sec:java_library_configurations_graph
  */
 dependencies {
-    //runtimeOnlyNonPublishable("com.github.GTNewHorizons:NotEnoughItems:2.7.69-GTNH:dev")
+    // Tinker's Construct (GTNH fork) - hard dependency, loaded after us.
+    api("com.github.GTNewHorizons:TinkersConstruct:1.14.117-GTNH:dev") { transitive = false }
+    api("com.github.GTNewHorizons:Mantle:0.5.4:dev") { transitive = false }
+
+    // GregTech 6 - hard dependency, loaded before us.
+    api("com.gregoriust.gregtech:gregtech_1.7.10:6.17.06:dev") { transitive = false }
+
+    // TiC keeps CoFH compileOnly, so `transitive = false` above leaves it off our classpath - but
+    // ToolCore declares `implements IEnergyContainerItem, IEqualityOverrideItem`, and javac has to load
+    // both to resolve the class at all. They are split across the two jars:
+    //   cofh.api.energy.IEnergyContainerItem -> CoFHLib
+    //   cofh.core.item.IEqualityOverrideItem -> CoFHCore
+    // Resolved from the CoFH repository in repositories.gradle. CoFHCore is published there without a
+    // -dev classifier, so it is referenced bare; that jar was verified to be MCP-deobfuscated and to
+    // carry IEqualityOverrideItem with the same signature as the R3.0.4 build TiC expects.
+    // Compile-time only - never shipped, TiC handles CoFH at runtime.
+    compileOnly("cofh:CoFHLib:1.7.10R3.0.3:dev")
+    compileOnly("cofh:CoFHCore:3.1.6")
+
+    // Needed at runtime for development runs only.
+    runtimeOnlyNonPublishable("com.github.GTNewHorizons:NotEnoughItems:2.7.69-GTNH:dev")
 }

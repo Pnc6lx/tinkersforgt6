@@ -1,0 +1,46 @@
+# TinkersGT6 - 为 GregTech 6 材料可达的更高挖掘等级补充名称。
+# 挖掘等级 N 对应 gui.mining(N+1)。匠魂本体只提供 1-6；
+# 安装 IguanaTweaksTConstruct 时（harvestLevelMulIguanaTweaks = 2.0）GT6 材料等级可达 30。
+gui.mining7=§b6 级§r
+gui.mining8=§b7 级§r
+gui.mining9=§a8 级§r
+gui.mining10=§a9 级§r
+gui.mining11=§a10 级§r
+gui.mining12=§e11 级§r
+gui.mining13=§e12 级§r
+gui.mining14=§e13 级§r
+gui.mining15=§614 级§r
+gui.mining16=§615 级§r
+gui.mining17=§616 级§r
+gui.mining18=§c17 级§r
+gui.mining19=§c18 级§r
+gui.mining20=§c19 级§r
+gui.mining21=§c20 级§r
+gui.mining22=§d21 级§r
+gui.mining23=§d22 级§r
+gui.mining24=§d23 级§r
+gui.mining25=§d24 级§r
+gui.mining26=§525 级§r
+gui.mining27=§526 级§r
+gui.mining28=§527 级§r
+gui.mining29=§528 级§r
+gui.mining30=§529 级§r
+gui.mining31=§530 级§r
+
+# GregTech 6 材料自带的附魔等级可能超过原版上限（最高 10 级）。
+# 缺少这些键时 tooltip 会直接显示未本地化的 enchantment.level.N。
+enchantment.level.1=I
+enchantment.level.2=II
+enchantment.level.3=III
+enchantment.level.4=IV
+enchantment.level.5=V
+enchantment.level.6=VI
+enchantment.level.7=VII
+enchantment.level.8=VIII
+enchantment.level.9=IX
+enchantment.level.10=X
+enchantment.level.11=XI
+enchantment.level.12=XII
+enchantment.level.13=XIII
+enchantment.level.14=XIV
+enchantment.level.15=XV

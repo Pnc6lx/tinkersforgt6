@@ -1,5 +1,22 @@
 // Add any additional repositories for your dependencies here.
 
 repositories {
+    maven {
+        name = "GregTech 6"
+        url = "https://gregtech.mechaenetia.com/"
+        content {
+            includeGroup("com.gregoriust.gregtech")
+        }
+    }
 
+    // CoFH - compile-time only, see dependencies.gradle. The usual `cofh:` coordinates are dead and
+    // CurseMaven 404s, but this host serves a real Maven layout for both jars. Scoped to the cofh group
+    // so it can never shadow another dependency.
+    maven {
+        name = "CoFH"
+        url = "https://gregtech.overminddl1.com/"
+        content {
+            includeGroup("cofh")
+        }
+    }
 }
