@@ -1,4 +1,4 @@
-# TinkersGT6 - extra harvest level names for the levels GregTech 6 materials can reach.
+# Tinker's For Gregtech 6 - extra harvest level names for the levels GregTech 6 materials can reach.
 # Harvest level N is looked up as gui.mining(N+1). TConstruct ships 1-6; with
 # IguanaTweaksTConstruct active (harvestLevelMulIguanaTweaks = 2.0) GT6 qualities reach 30.
 gui.mining7=§bTier 6§r

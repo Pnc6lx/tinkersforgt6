@@ -1,14 +1,14 @@
-# Example Forge Mod for Minecraft 1.7.10
+# Tinker's For Gregtech 6
 
-[![](https://jitpack.io/v/GTNewHorizons/ExampleMod1.7.10.svg)](https://jitpack.io/#GTNewHorizons/ExampleMod1.7.10)
-[![](https://github.com/GTNewHorizons/ExampleMod1.7.10/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/GTNewHorizons/ExampleMod1.7.10/actions/workflows/build-and-test.yml)
+Bridges GregTech 6 materials into Tinker's Construct: registers every GT6 tool material as a
+TConstruct tool material and exposes GT6 material enchantments as an always-on material trait.
 
-An example mod for Minecraft 1.7.10 with Forge focussed on a stable, updatable setup.
+Based on the [GTNH ExampleMod1.7.10](https://github.com/GTNewHorizons/ExampleMod1.7.10) build template.
 
 <!-- omit in toc -->
 ### Table of Contents
 
-* [Example Forge Mod for Minecraft 1.7.10](#example-forge-mod-for-minecraft-1710)
+* [Tinker's For Gregtech 6](#tinkers-for-gregtech-6)
     * [Motivation](#motivation)
     * [Help! I'm stuck!](#help-im-stuck)
     * [Getting started](#getting-started)
@@ -26,24 +26,22 @@ We had our fair share in struggles with build scripts for Minecraft Forge. There
 
 ### Help! I'm stuck!
 
-We all have been there! Check out our [FAQ](https://github.com/GTNewHorizons/ExampleMod1.7.10/blob/main/docs/FAQ.md). If that doesn't help, please open an issue.
+We all have been there! Check out our [FAQ](docs/FAQ.md). If that doesn't help, please open an issue.
 
 ### Getting started
 
-> [!WARNING]
-> Do not clone or fork this repository when creating a new mod. It contains files that are specific to this example project and are not part of the mod template. Use the [project starter](https://github.com/GTNewHorizons/ExampleMod1.7.10/releases/download/master-packages/starter.zip) instead.
+Requires a JDK 8 toolchain (Corretto 1.8 is what this project is developed against).
 
-Creating mod from scratch:
-1. Unzip [project starter](https://github.com/GTNewHorizons/ExampleMod1.7.10/releases/download/master-packages/starter.zip) into project directory.
-2. Replace placeholders in LICENSE-template and rename it to LICENSE, or remove LICENSE-template and put any other license you like on your code. This is an permissive OSS project and we encourage you participate in OSS movement by having permissive license like one in template. You can find out pros and cons of OSS software in [this article](https://www.freecodecamp.org/news/what-is-great-about-developing-open-source-and-what-is-not/)
-3. Ensure your project is under VCS. For example initialise git repository by running `git init; git commit --message "initialized repository"`.
-4. Replace placeholders (edit values in gradle.properties, change example package and class names, etc.)
-5. Run `./gradlew setupDecompWorkspace`
-6. Run `./gradlew build`
-6. Make sure to check out the rest sections of this file.
-7. You are good to go!
-
-We also have described guidelines for existing mod [migration](docs/migration.md) and [porting](docs/porting.md)
+1. CoFH's jars are not served by any live Maven repository, so they are resolved from `mavenLocal()`.
+   On a fresh machine `dependencies.gradle` documents the `mvn install:install-file` commands needed
+   to install `CoFHLib` and `CoFHCore` — without them the build fails with
+   `Could not find cofh:CoFHLib:...`.
+2. Spotless formats `mcmod.info` with prettier and needs npm. On Windows its auto-detection fails, so
+   either put `npmExec=C:/Program Files/nodejs/npm.cmd` into `~/.gradle/gradle.properties` or pass
+   `-PnpmExec=<path to npm.cmd>` to gradlew.
+3. Run `./gradlew build` to produce `build/libs/tinkersforgt6-<version>.jar`.
+4. `./gradlew runServer` starts a dedicated server, `./gradlew runClient` the game.
+   Note that the client needs a working OpenGL install — see [FAQ](docs/FAQ.md).
 
 ### Features
 
@@ -103,7 +101,4 @@ For local tweaks that you don't want to commit to Git, like adding extra JVM arg
 
 ### Feedback wanted
 
-If you tried out this build script we would love to head your opinion! Is there any feature missing for you? Did something not work? Please open an issue and we will try to resolve it asap!
-
-Happy modding,\
-[SinTh0r4s](https://github.com/SinTh0r4s), [TheElan](https://github.com/TheElan) and [basdxz](https://github.com/basdxz)
+Build system originally written by [SinTh0r4s](https://github.com/SinTh0r4s), [TheElan](https://github.com/TheElan) and [basdxz](https://github.com/basdxz).

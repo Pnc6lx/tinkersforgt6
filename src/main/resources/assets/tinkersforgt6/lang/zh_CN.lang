@@ -1,4 +1,4 @@
-# TinkersGT6 - 为 GregTech 6 材料可达的更高挖掘等级补充名称。
+# Tinker's For Gregtech 6 - 为 GregTech 6 材料可达的更高挖掘等级补充名称。
 # 挖掘等级 N 对应 gui.mining(N+1)。匠魂本体只提供 1-6；
 # 安装 IguanaTweaksTConstruct 时（harvestLevelMulIguanaTweaks = 2.0）GT6 材料等级可达 30。
 gui.mining7=§b6 级§r

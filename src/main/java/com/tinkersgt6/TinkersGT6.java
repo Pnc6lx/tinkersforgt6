@@ -23,8 +23,8 @@ import tconstruct.library.TConstructRegistry;
     dependencies = "required-after:" + Mods.GREGAPI + "; before:" + Mods.TCONSTRUCT)
 public class TinkersGT6 {
 
-    public static final String MODID = "tinkersgt6";
-    public static final String NAME = "TinkersGT6";
+    public static final String MODID = "tinkersforgt6";
+    public static final String NAME = "Tinker's For Gregtech 6";
 
     @SidedProxy(clientSide = "com.tinkersgt6.ClientProxy", serverSide = "com.tinkersgt6.CommonProxy")
     public static CommonProxy proxy;
