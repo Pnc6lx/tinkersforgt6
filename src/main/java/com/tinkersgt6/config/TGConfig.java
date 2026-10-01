@@ -47,9 +47,11 @@ public class TGConfig {
         config.get(
             Config.CAT_GENERAL,
             Config.MATERIAL_ID_RANGE_START,
-            2500,
+            3000,
             "Lowest material ID used by Tinker's For Gregtech 6. TinkersGregworks defaults to 1500 and occupies roughly"
-                + " 1500-1875, so 2500 keeps both addons fully separated. Only IDs above this value are used.",
+                + " 1500-1875, and TiC-Tooltips treats 2000-2999 as ExtraTiC's range - it resolves the part item through"
+                + " a map that is only filled when ExtraTiC is present, so an ID inside that window makes it build a"
+                + " stack from a null item and crash. 3000 stays clear of both. Only IDs above this value are used.",
             300,
             15000)
             .getInt();
@@ -238,7 +240,7 @@ public class TGConfig {
         return getInt(
             Config.CAT_GENERAL,
             Config.MATERIAL_ID_RANGE_START,
-            2500,
+            3000,
             300,
             15000,
             "Lowest material ID used by Tinker's For Gregtech 6.");

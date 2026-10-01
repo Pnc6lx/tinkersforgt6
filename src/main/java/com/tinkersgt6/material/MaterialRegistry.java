@@ -167,12 +167,13 @@ public final class MaterialRegistry {
         int start = TGConfig.materialIDRangeStart();
         if (start < MIN_SAFE_ID) start = MIN_SAFE_ID;
 
-        if (Loader.isModLoaded(Mods.TGREGWORKS) && start < 2500) {
+        if (Loader.isModLoaded(Mods.TGREGWORKS) && start < 3000) {
             // TinkersGregworks defaults to 1500 and occupies roughly 1500-1875, and it does *not* re-check
-            // occupancy once its config has been written. Staying above it keeps both addons usable together.
+            // occupancy once its config has been written. Staying above it keeps both addons usable together -
+            // and above 3000 also dodges the ExtraTiC window that TiC-Tooltips assumes.
             TinkersGT6Log
-                .warn("TinkersGregworks detected: raising the material ID range start from " + start + " to 2500.");
-            start = 2500;
+                .warn("TinkersGregworks detected: raising the material ID range start from " + start + " to 3000.");
+            start = 3000;
         }
         return start;
     }

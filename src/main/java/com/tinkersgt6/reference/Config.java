@@ -21,7 +21,7 @@ public final class Config {
 
     /* ---- stats ---- */
     public static final String HARVEST_LEVEL_MUL = "harvestLevelMul";
-    public static final String HARVEST_LEVEL_MUL_IGUANA = "harvestLevelMulIguanaTweaks";
+    public static final String HARVEST_LEVEL_ADD_IGUANA = "harvestLevelAddIguanaTweaks";
     public static final String HARVEST_LEVEL_ADD = "harvestLevelAdd";
     public static final String HARVEST_LEVEL_CAP = "harvestLevelCap";
 
@@ -45,6 +45,7 @@ public final class Config {
     public static final String ATTACK_SPEED = "attackSpeed";
     public static final String ATTACK_CAP = "attackCap";
 
+    public static final String HANDLE_MODIFIER_BASE = "handleModifierBase";
     public static final String HANDLE_MODIFIER_MUL = "handleModifierMul";
     public static final String HANDLE_MODIFIER_ADD = "handleModifierAdd";
     public static final String HANDLE_MODIFIER_CAP = "handleModifierCap";
