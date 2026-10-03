@@ -9,15 +9,46 @@ public final class Config {
     public static final String CAT_STATS = "stats";
     public static final String CAT_ENCHANT = "enchant";
     public static final String CAT_MATERIALS = "materials";
+    public static final String CAT_RECIPES = "recipes";
+    public static final String CAT_PARTS = "parts";
+    public static final String CAT_POWER = "power";
 
     /* ---- general ---- */
     public static final String MATERIAL_ID_RANGE_START = "materialIDRangeStart";
     public static final String ON_ID_CONFLICT = "onIdConflict";
-    public static final String ADD_MATERIALS_ANYWAY = "addMaterialsAnyway";
     public static final String MATERIAL_NAME_PREFIX = "materialNamePrefix";
     public static final String CREATIVE_TAB_MODE = "creativeTabMode";
     public static final String CLIENT_RENDER_MAPPING = "clientRenderMapping";
     public static final String DEBUG_LOGGING = "debugLogging";
+    public static final String ROD_COMPAT = "rodCompat";
+    public static final String ROD_BLACKLIST = "rodBlacklist";
+    public static final String TOOL_CLICK_COMPAT = "toolClickCompat";
+    public static final String TOOL_CLICK_DAMAGE = "toolClickDamage";
+    public static final String TOOL_CLICK_BEAMS = "toolClickBeams";
+
+    /* ---- power (GT6 battery upgrade) ---- */
+    public static final String BATTERY_UPGRADE = "batteryUpgrade";
+    public static final String BATTERY_DURABILITY_MODE = "batteryDurabilityMode";
+    public static final String BATTERY_EU_PER_DURABILITY = "batteryEuPerDurability";
+    public static final String BATTERY_RECHARGE_HOTBAR = "batteryRechargeFromHotbar";
+    public static final String BATTERY_RECHARGE_INTERVAL = "batteryRechargeIntervalTicks";
+    public static final String BATTERY_RECHARGE_PACKETS = "batteryRechargePacketsPerTick";
+    public static final String BATTERY_MIN_CAPACITY = "batteryMinCapacity";
+    public static final String BATTERY_ALLOW_UPGRADE = "batteryAllowUpgrade";
+
+    /* ---- general (MazeBreaker) ---- */
+    public static final String MAZE_BREAKER = "mazebreaker";
+    public static final String MAZE_BREAKER_SPEED = "mazebreakerSpeedMultiplier";
+    public static final String MAZE_BREAKER_DROPS = "mazebreakerDrops";
+
+    /* ---- recipes ---- */
+    public static final String PART_RECIPE_EUT = "partRecipeEUt";
+    public static final String PART_RECIPE_DURATION_PER_POINT = "partRecipeDurationPerPoint";
+    public static final String PART_RECIPE_MIN_DURATION = "partRecipeMinDuration";
+    public static final String PART_RECIPE_MAX_DURATION = "partRecipeMaxDuration";
+    public static final String PART_INPUT_MODE = "partInputMode";
+    public static final String PART_INPUT_CAP = "partInputCap";
+    public static final String PART_FORM_MODE = "partFormMode";
 
     /* ---- stats ---- */
     public static final String HARVEST_LEVEL_MUL = "harvestLevelMul";
@@ -66,6 +97,9 @@ public final class Config {
     public static final String MATERIAL_REINFORCED = "reinforced";
     public static final String MATERIAL_STONEBOUND = "stonebound";
     public static final String MATERIAL_CREATIVE_TAB = "creative-tab";
+
+    /* ---- parts.<name> ---- */
+    public static final String PART_ENABLED = "enabled";
 
     /** Sentinel for "no explicit value, use the default rule". */
     public static final int NO_INT_OVERRIDE = -1000;

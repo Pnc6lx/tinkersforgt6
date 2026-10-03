@@ -47,15 +47,23 @@ public final class MaterialRegistry {
         public ToolMaterial toolMaterial;
         public final boolean creativeTab;
 
+        /**
+         * True once the material is actually inside TConstruct's registry. A material that GT6 hides keeps
+         * {@code pending = true} and only gets registered if GT6 reveals it later - its ID stays reserved either way.
+         */
+        public boolean active;
+
+        /** Registered nowhere yet, waiting for GT6 to un-hide the material. */
+        public boolean pending;
+
         /** GT6 stats as seen at registration time, used to detect Materials.cfg overrides. */
         public final byte quality;
         public final long durability;
         public final float speed;
 
-        Registered(OreDictMaterial gt, int id, ToolMaterial toolMaterial, boolean creativeTab) {
+        Registered(OreDictMaterial gt, int id, boolean creativeTab) {
             this.gt = gt;
             this.id = id;
-            this.toolMaterial = toolMaterial;
             this.creativeTab = creativeTab;
             this.quality = gt.mToolQuality;
             this.durability = gt.mToolDurability;
@@ -79,6 +87,8 @@ public final class MaterialRegistry {
     private static int skippedByConfig;
     private static int skippedByPolicy;
     private static int conflictCount;
+    private static int deferredCount;
+    private static int deactivatedCount;
 
     /* ------------------------------------------------------------------ */
 
@@ -97,45 +107,116 @@ public final class MaterialRegistry {
                 continue;
             }
 
-            ToolMaterial toolMaterial;
-            try {
-                toolMaterial = ToolMaterialFactory.create(material);
-                TConstructRegistry.addToolMaterial(
-                    id,
-                    toolMaterial.materialName,
-                    toolMaterial.localizationString,
-                    toolMaterial.harvestLevel,
-                    toolMaterial.durability,
-                    toolMaterial.miningspeed,
-                    toolMaterial.attack,
-                    toolMaterial.handleModifier,
-                    toolMaterial.reinforced,
-                    toolMaterial.stonebound,
-                    toolMaterial.tipStyle,
-                    toolMaterial.primaryColor);
-            } catch (Throwable t) {
-                // Last line of defence: addToolMaterial throws on an occupied ID. One bad material must never
-                // take the whole game down with it.
-                skippedByPolicy++;
-                TinkersGT6Log.error("Skipping GT6 material " + material.mNameInternal + " (ID " + id + ")", t);
-                continue;
-            }
-
-            boolean creativeTab = MaterialSource.shouldShowInCreativeTab(material);
-            if (creativeTab) TConstructRegistry.addDefaultToolPartMaterial(id);
-
             usedIDs.add(id);
             idToMaterial.put(id, material);
             materialToID.put(material, id);
-            registered.add(new Registered(material, id, toolMaterial, creativeTab));
-            registeredCount++;
 
-            if (TGConfig.debugLogging()) {
-                TinkersGT6Log.debug(material, id, toolMaterial);
+            Registered entry = new Registered(material, id, MaterialSource.shouldShowInCreativeTab(material));
+            registered.add(entry);
+
+            // Hidden materials still keep their ID: GT6 can reveal them later (see MaterialSource.isVisible), and a
+            // material that reappears must not silently shift every ID after it.
+            if (MaterialSource.isVisible(material)) {
+                if (activate(entry)) registeredCount++;
+                else skippedByPolicy++;
+            } else {
+                entry.pending = true;
+                deferredCount++;
+            }
+
+            if (TGConfig.debugLogging() && entry.toolMaterial != null) {
+                TinkersGT6Log.debug(material, id, entry.toolMaterial);
             }
         }
 
         TGConfig.saveIfChanged();
+    }
+
+    /**
+     * Puts a single material into TConstruct's registry.
+     *
+     * @return false when the material had to be dropped - {@code addToolMaterial} throws on an occupied ID, and one
+     *         bad material must never take the whole game down with it.
+     */
+    private static boolean activate(Registered entry) {
+        try {
+            ToolMaterial toolMaterial = ToolMaterialFactory.create(entry.gt);
+            TConstructRegistry.addToolMaterial(
+                entry.id,
+                toolMaterial.materialName,
+                toolMaterial.localizationString,
+                toolMaterial.harvestLevel,
+                toolMaterial.durability,
+                toolMaterial.miningspeed,
+                toolMaterial.attack,
+                toolMaterial.handleModifier,
+                toolMaterial.reinforced,
+                toolMaterial.stonebound,
+                toolMaterial.tipStyle,
+                toolMaterial.primaryColor);
+            if (entry.creativeTab) TConstructRegistry.addDefaultToolPartMaterial(entry.id);
+
+            // Read the instance back out: addToolMaterial does not store the one we handed it, it builds its own.
+            // Anything that later compares against TConstructRegistry has to use that copy, not ours.
+            entry.toolMaterial = TConstructRegistry.toolMaterials.get(entry.id);
+            entry.active = true;
+            entry.pending = false;
+            return true;
+        } catch (Throwable t) {
+            entry.active = false;
+            entry.pending = false;
+            TinkersGT6Log.error("Skipping GT6 material " + entry.gt.mNameInternal + " (ID " + entry.id + ")", t);
+            return false;
+        }
+    }
+
+    /**
+     * Takes a material back out of TConstruct's registry and leaves its ID reserved. Used for materials that turned
+     * out to have no craftable form - a tool material nobody can build a part from is worse than no material at all.
+     */
+    public static void deactivate(Registered entry) {
+        if (!entry.active) return;
+
+        ToolMaterial mine = entry.toolMaterial;
+        if (mine != null) {
+            // Only remove the name if it still points at *our* material: TConstruct may have overwritten it with its
+            // own, and that one has to stay.
+            ToolMaterial byName = TConstructRegistry.toolMaterialStrings.get(mine.materialName);
+            if (byName == mine) TConstructRegistry.toolMaterialStrings.remove(mine.materialName);
+        }
+        TConstructRegistry.toolMaterials.remove(Integer.valueOf(entry.id));
+        TConstructRegistry.defaultToolPartMaterials.remove(Integer.valueOf(entry.id));
+
+        entry.active = false;
+        entry.pending = false;
+        deactivatedCount++;
+    }
+
+    /**
+     * Registers everything GT6 has revealed since preInit.
+     *
+     * <p>
+     * Safe to call during postInit: every ID was already handed out during preInit, so nothing here can push the
+     * highest ID past what {@code DynamicToolPart} sized its icon array to.
+     * </p>
+     */
+    public static int activatePending() {
+        int activated = 0;
+        for (Registered entry : registered) {
+            if (!entry.pending) continue;
+            if (!MaterialSource.isVisible(entry.gt)) continue;
+
+            entry.pending = false;
+            if (activate(entry)) {
+                registeredCount++;
+                deferredCount--;
+                activated++;
+            } else {
+                skippedByPolicy++;
+                deferredCount--;
+            }
+        }
+        return activated;
     }
 
     /**
@@ -145,6 +226,7 @@ public final class MaterialRegistry {
     public static int refreshStats() {
         int changed = 0;
         for (Registered entry : registered) {
+            if (!entry.active) continue;
             if (!entry.statsChanged()) continue;
 
             ToolMaterial fresh = ToolMaterialFactory.create(entry.gt);
@@ -258,8 +340,28 @@ public final class MaterialRegistry {
         return Collections.unmodifiableList(registered);
     }
 
+    /**
+     * @return every entry that is actually visible to TConstruct right now - this is what parts and recipes may be
+     *         generated for.
+     */
+    public static List<Registered> active() {
+        List<Registered> result = new ArrayList<>();
+        for (Registered entry : registered) {
+            if (entry.active) result.add(entry);
+        }
+        return result;
+    }
+
     public static int registeredCount() {
         return registeredCount;
+    }
+
+    public static int deferredCount() {
+        return deferredCount;
+    }
+
+    public static int deactivatedCount() {
+        return deactivatedCount;
     }
 
     public static int skippedByConfig() {

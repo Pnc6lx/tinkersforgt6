@@ -21,6 +21,7 @@ public class TGConfig {
     private static final Map<String, Integer> intCache = new HashMap<>();
     private static final Map<String, Boolean> boolCache = new HashMap<>();
     private static final Map<String, String> stringCache = new HashMap<>();
+    private static final Map<String, Long> longCache = new HashMap<>();
 
     /** Material name -> per-material property bag. */
     private static final Map<String, Map<String, Property>> materialProps = new HashMap<>();
@@ -67,13 +68,6 @@ public class TGConfig {
         config
             .get(
                 Config.CAT_GENERAL,
-                Config.ADD_MATERIALS_ANYWAY,
-                false,
-                "Register a material even if TConstruct already knows a material with the same name.")
-            .getBoolean();
-        config
-            .get(
-                Config.CAT_GENERAL,
                 Config.MATERIAL_NAME_PREFIX,
                 "",
                 "Prefix prepended to every registered material name. Useful to avoid name collisions with other"
@@ -92,11 +86,88 @@ public class TGConfig {
             .get(
                 Config.CAT_GENERAL,
                 Config.CLIENT_RENDER_MAPPING,
-                true,
+                false,
                 "Register client-side render mappings so tool parts look for their textures under the"
-                    + " 'tinker:<folder>/<material><suffix>' path.")
+                    + " 'tinker:<folder>/<material><suffix>' path. Left off by default: with no such mapping"
+                    + " TConstruct falls back to its own default part silhouette and tints it with the material"
+                    + " colour, which is what GT6 materials should look like. Turn this on only if you ship textures"
+                    + " for every material - a mapping without a texture makes the part borrow whatever material"
+                    + " happens to own that name (Iron, Steel, ...) and stops the colouring.")
             .getBoolean();
         config.get(Config.CAT_GENERAL, Config.DEBUG_LOGGING, false, "Log each registered material individually.")
+            .getBoolean();
+        config
+            .get(
+                Config.CAT_GENERAL,
+                Config.ROD_COMPAT,
+                true,
+                "Let the Tool Station accept GregTech rods as tool handles by translating them through GregTech's"
+                    + " OreDict data into the matching TinkersGT6 tool rod.")
+            .getBoolean();
+        config
+            .get(
+                Config.CAT_GENERAL,
+                Config.ROD_BLACKLIST,
+                true,
+                "Exempt the tool rods registered by this mod from GregTech's OreDict unification, so a handle in the"
+                    + " inventory is never silently swapped for a GregTech stick.")
+            .getBoolean();
+        config
+            .get(
+                Config.CAT_GENERAL,
+                Config.TOOL_CLICK_COMPAT,
+                true,
+                "Let TConstruct tools trigger GregTech's tool interactions when right-clicking GregTech blocks, the same"
+                    + " way a GregTech tool would: a Shovel pulls the waste out of a Crucible, Smeltery or solid"
+                    + " Generator, and a Chisel carves a Mold or cleans Boiler Coke.")
+            .getBoolean();
+        config
+            .get(
+                Config.CAT_GENERAL,
+                Config.TOOL_CLICK_DAMAGE,
+                1,
+                "Durability points a successful interaction costs, multiplied by how much GregTech charged for it"
+                    + " (GregTech deducts 10000 = 1 point, and most of these interactions cost less than that)."
+                    + " Set to 0 to use these interactions for free.",
+                0,
+                64)
+            .getInt();
+        config
+            .get(
+                Config.CAT_GENERAL,
+                Config.TOOL_CLICK_BEAMS,
+                true,
+                "Let the Hatchet and Lumber Axe turn logs into the matching GregTech beam. Unlike GregTech's own axe,"
+                    + " which falls back to one generic beam for logs it does not know, this asks GregTech's wood"
+                    + " dictionary for the beam belonging to that exact kind of wood, and leaves unknown logs alone.")
+            .getBoolean();
+        config
+            .get(
+                Config.CAT_GENERAL,
+                Config.MAZE_BREAKER,
+                true,
+                "MazeBreaker, GregTech's Twilight Forest material trait: a tool whose head material has it mines"
+                    + " Mazestone, Maze Hedge and Towerwood much faster, and still gets their drops when the tool is"
+                    + " otherwise too weak for them. Does nothing without TwilightForest.")
+            .getBoolean();
+        config
+            .get(
+                Config.CAT_GENERAL,
+                Config.MAZE_BREAKER_SPEED,
+                40.0,
+                "How much faster a MazeBreaker tool mines those three blocks. GregTech uses 40; TConstruct computes"
+                    + " its mining speed differently, so this is a relative boost rather than an exact match.",
+                1.0,
+                10000.0)
+            .getDouble();
+        config
+            .get(
+                Config.CAT_GENERAL,
+                Config.MAZE_BREAKER_DROPS,
+                true,
+                "Take over breaking those blocks whenever vanilla would drop nothing because the tool's harvest level"
+                    + " is below what the block asks for - otherwise the block disappears without loot even though it"
+                    + " can still be mined.")
             .getBoolean();
     }
 
@@ -250,10 +321,6 @@ public class TGConfig {
         return getString(Config.CAT_GENERAL, Config.ON_ID_CONFLICT, "REALLOCATE", null, "ID conflict strategy.");
     }
 
-    public static boolean addMaterialsAnyway() {
-        return getBoolean(Config.CAT_GENERAL, Config.ADD_MATERIALS_ANYWAY, false, "Register duplicate names anyway.");
-    }
-
     public static String materialNamePrefix() {
         return getString(Config.CAT_GENERAL, Config.MATERIAL_NAME_PREFIX, "", null, "Material name prefix.");
     }
@@ -268,7 +335,169 @@ public class TGConfig {
     }
 
     public static boolean clientRenderMapping() {
-        return getBoolean(Config.CAT_GENERAL, Config.CLIENT_RENDER_MAPPING, true, "Register client render mappings.");
+        return getBoolean(
+            Config.CAT_GENERAL,
+            Config.CLIENT_RENDER_MAPPING,
+            false,
+            "Register client render mappings. Off by default: TConstruct then draws its default silhouette tinted"
+                + " with the material colour.");
+    }
+
+    public static boolean rodCompat() {
+        return getBoolean(Config.CAT_GENERAL, Config.ROD_COMPAT, true, "Accept GregTech rods in the Tool Station.");
+    }
+
+    public static boolean rodBlacklist() {
+        return getBoolean(
+            Config.CAT_GENERAL,
+            Config.ROD_BLACKLIST,
+            true,
+            "Exempt our tool rods from GregTech unification.");
+    }
+
+    public static boolean toolClickCompat() {
+        return getBoolean(
+            Config.CAT_GENERAL,
+            Config.TOOL_CLICK_COMPAT,
+            true,
+            "Forward GregTech tool interactions from TConstruct tools.");
+    }
+
+    public static int toolClickDamage() {
+        return getInt(
+            Config.CAT_GENERAL,
+            Config.TOOL_CLICK_DAMAGE,
+            1,
+            0,
+            64,
+            "Durability points per forwarded GregTech tool interaction.");
+    }
+
+    public static boolean toolClickBeams() {
+        return getBoolean(
+            Config.CAT_GENERAL,
+            Config.TOOL_CLICK_BEAMS,
+            true,
+            "Turn logs into their matching GregTech beam when right-clicked with an axe.");
+    }
+
+    public static boolean mazeBreaker() {
+        return getBoolean(
+            Config.CAT_GENERAL,
+            Config.MAZE_BREAKER,
+            true,
+            "MazeBreaker: faster Twilight Forest maze blocks, and drops for tools too weak for them.");
+    }
+
+    public static double mazeBreakerSpeedMultiplier() {
+        return getDouble(
+            Config.CAT_GENERAL,
+            Config.MAZE_BREAKER_SPEED,
+            40.0,
+            "Mining speed multiplier a MazeBreaker tool gets on the three maze blocks. GregTech uses 40.");
+    }
+
+    public static boolean mazeBreakerDrops() {
+        return getBoolean(
+            Config.CAT_GENERAL,
+            Config.MAZE_BREAKER_DROPS,
+            true,
+            "Hand out the drops when vanilla would quietly discard them for a too-weak MazeBreaker tool.");
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* power */
+    /* ------------------------------------------------------------------ */
+
+    public static boolean powerBoolean(String key, boolean default_, String comment) {
+        return getBoolean(Config.CAT_POWER, key, default_, comment);
+    }
+
+    public static int powerInt(String key, int default_, int min, int max, String comment) {
+        return getInt(Config.CAT_POWER, key, default_, min, max, comment);
+    }
+
+    public static double powerDouble(String key, double default_, String comment) {
+        return getDouble(Config.CAT_POWER, key, default_, comment);
+    }
+
+    public static String powerString(String key, String default_, String[] valid, String comment) {
+        return getString(Config.CAT_POWER, key, default_, valid, comment);
+    }
+
+    public static boolean batteryUpgrade() {
+        return powerBoolean(
+            Config.BATTERY_UPGRADE,
+            true,
+            "Register the GregTech battery upgrade: put a chargeable EU battery next to a TConstruct tool in the Tool"
+                + " Station and the tool runs on EU instead of durability. Costs one modifier slot.");
+    }
+
+    /**
+     * How a battery tool pays for a use.
+     * {@code "ENERGY_ONLY"} spends charge and leaves durability alone, {@code "ENERGY_AND_DURABILITY"} copies
+     * GregTech's own electric tools, which additionally take the durability hit with the probability
+     * {@code 1 / max(10, toolQuality * 20)}.
+     */
+    public static String batteryDurabilityMode() {
+        return powerString(
+            Config.BATTERY_DURABILITY_MODE,
+            "ENERGY_AND_DURABILITY",
+            new String[] { "ENERGY_ONLY", "ENERGY_AND_DURABILITY" },
+            "ENERGY_ONLY spends charge instead of durability. ENERGY_AND_DURABILITY spends charge and additionally"
+                + " takes the durability hit with the same odds GregTech's electric tools use"
+                + " (1 / max(10, tool quality * 20) per use).");
+    }
+
+    public static double batteryEuPerDurability() {
+        return powerDouble(
+            Config.BATTERY_EU_PER_DURABILITY,
+            100.0,
+            "EU spent per point of TConstruct durability the action would have cost. TConstruct charges one point per"
+                + " block broken, and GregTech charges its own tools 100 units for the same block, so 100 keeps the two"
+                + " scales comparable. 0 makes the battery free.");
+    }
+
+    public static boolean batteryRechargeFromHotbar() {
+        return powerBoolean(
+            Config.BATTERY_RECHARGE_HOTBAR,
+            true,
+            "Let a battery tool refill itself from chargeable EU batteries sitting in the player's hotbar, the way"
+                + " TConstruct's own Flux upgrade does with Redstone Flux cells.");
+    }
+
+    public static int batteryRechargeIntervalTicks() {
+        return powerInt(
+            Config.BATTERY_RECHARGE_INTERVAL,
+            20,
+            1,
+            1200,
+            "Ticks between two automatic hotbar refills. 1 refunds continuously but checks the hotbar every tick.");
+    }
+
+    public static int batteryRechargePacketsPerTick() {
+        return powerInt(
+            Config.BATTERY_RECHARGE_PACKETS,
+            4,
+            1,
+            1024,
+            "How many EU packets may move per refill. A packet is one unit of the tool's voltage, so LV (32 EU)"
+                + " refills four packets = 128 EU per check.");
+    }
+
+    public static double batteryMinCapacity() {
+        return powerDouble(
+            Config.BATTERY_MIN_CAPACITY,
+            1.0,
+            "Smallest EU capacity a battery must have before it can be built into a tool. GregTech extends huge gadget"
+                + " cells into the same class of item, so this keeps clearly-unsuitable batteries out of the upgrade.");
+    }
+
+    public static boolean batteryAllowUpgrade() {
+        return powerBoolean(
+            Config.BATTERY_ALLOW_UPGRADE,
+            true,
+            "Allow swapping the installed battery for a bigger one without spending another modifier slot.");
     }
 
     public static boolean debugLogging() {
@@ -285,6 +514,39 @@ public class TGConfig {
 
     public static String statString(String key, String default_, String comment) {
         return getString(Config.CAT_STATS, key, default_, null, comment);
+    }
+
+    public static double recipeDouble(String key, double default_, String comment) {
+        return getDouble(Config.CAT_RECIPES, key, default_, comment);
+    }
+
+    public static long recipeLong(String key, long default_, String comment) {
+        String id = Config.CAT_RECIPES + "." + key;
+        Long cached = longCache.get(id);
+        if (cached != null) return cached.longValue();
+        long value = default_;
+        try {
+            value = Long.parseLong(
+                config.get(Config.CAT_RECIPES, key, Long.toString(default_), comment)
+                    .getString());
+        } catch (RuntimeException e) {
+            value = default_;
+        }
+        longCache.put(id, value);
+        return value;
+    }
+
+    public static String recipeString(String key, String default_, String[] valid, String comment) {
+        return getString(Config.CAT_RECIPES, key, default_, valid, comment);
+    }
+
+    /** Per part type; {@code default_} comes from the part table, so cold parts can ship switched off. */
+    public static boolean isPartEnabled(String part, boolean default_) {
+        return getBoolean(
+            Config.CAT_PARTS + "." + part,
+            Config.PART_ENABLED,
+            default_,
+            "Generate extruder recipes for this part.");
     }
 
     public static String enchantString(String key, String default_, String comment) {

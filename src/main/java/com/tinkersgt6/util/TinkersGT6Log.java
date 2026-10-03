@@ -26,6 +26,10 @@ public final class TinkersGT6Log {
         LOG.error(message, t);
     }
 
+    public static void debug(String message) {
+        LOG.debug(message);
+    }
+
     public static void debug(OreDictMaterial material, int id, ToolMaterial toolMaterial) {
         LOG.debug(
             "{} -> id {}, harvest {}, durability {}, speed {}, attack {}, handle {}, reinforced {}, stonebound {}, color #{})",

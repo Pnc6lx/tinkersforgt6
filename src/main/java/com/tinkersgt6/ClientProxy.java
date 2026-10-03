@@ -16,9 +16,11 @@ public class ClientProxy extends CommonProxy {
     }
 
     /**
-     * Without a render mapping TConstruct has no idea where to look for a material's textures, and the tool renders
-     * with missing textures. Paths follow {@code tinker:<defaultFolder>/<materialName><iconSuffix>}, which is also what
-     * resource packs override.
+     * Off by default, and that is deliberate. When no mapping is registered {@code ToolCore.getCorrectIcon} falls back
+     * to TConstruct's own default part silhouette and {@code getCorrectColor} tints it with the material's
+     * {@code primaryColor} - exactly the "default part, GT6 colour" look we want. A mapping only pays off when the
+     * material actually ships textures under {@code tinker:<folder>/<material><suffix>}; without them the name is
+     * resolved against whatever material owns it (Iron, Steel, ...) and the tinting stops.
      */
     private void registerRenderMappings() {
         if (!TGConfig.clientRenderMapping()) return;

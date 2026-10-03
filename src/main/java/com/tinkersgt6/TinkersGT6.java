@@ -4,6 +4,7 @@ import net.minecraftforge.common.MinecraftForge;
 
 import com.tinkersgt6.enchant.AmmoLootingHandler;
 import com.tinkersgt6.enchant.GTMaterialTraitMod;
+import com.tinkersgt6.power.GTBatteryToolMod;
 import com.tinkersgt6.reference.Mods;
 import com.tinkersgt6.util.TinkersGT6Log;
 
@@ -41,6 +42,9 @@ public class TinkersGT6 {
         // The GregTech material trait: keeps material enchantments on the tool and re-applies them whenever a
         // TConstruct modifier overwrites the level.
         TConstructRegistry.registerActiveToolMod(new GTMaterialTraitMod());
+
+        // The GregTech battery upgrade, i.e. tools that run on EU instead of durability.
+        GTBatteryToolMod.register();
 
         MinecraftForge.EVENT_BUS.register(new AmmoLootingHandler());
         TinkersGT6Log.info("GregTech material trait registered.");
