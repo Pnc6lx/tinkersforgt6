@@ -55,4 +55,18 @@ dependencies {
 
     // Needed at runtime for development runs only.
     runtimeOnlyNonPublishable("com.github.GTNewHorizons:NotEnoughItems:2.7.69-GTNH:dev")
+
+    // UniMixins 0.3.1 - hard prerequisite, loaded before us.
+    //
+    // Mixin itself plus GTNHMixins' late mixin API (@LateMixin / ILateMixinLoader), used by
+    // com.tinkersgt6.mixin.late for the two things an addon cannot reach any other way - putting GregTech's IItemEnergy
+    // on TConstruct's ToolCore, and MazeBreaker's speed inside TConstruct's own mining speed.
+    //
+    // Declared as a real dependency rather than a development-only one: CommonProxy refuses to start without it (see
+    // requireUniMixins), so it has to be visible at compile time, in every development run, and in what a modpack or
+    // another addon pulls in transitively. See gradle.properties, usesMixins, for why this is not the build script's
+    // own mixin support - the loader here is found through FML's annotation scan, not through a tweaker in the
+    // manifest, which is what lets the registration ask which mods are present.
+    compileOnly("io.github.legacymoddingmc:unimixins:0.3.1:dev")
+    runtimeOnly("io.github.legacymoddingmc:unimixins:0.3.1:dev")
 }

@@ -9,6 +9,8 @@
 | `src/main/java/com/tinkersgt6/power/GTBattery.java` | NBT 读写、电池识别（支持/搁置分类）、从快捷栏抽电 |
 | `src/main/java/com/tinkersgt6/power/GTBatteryModifier.java` | Tool Station 里的改装项，占 1 个升级槽 |
 | `src/main/java/com/tinkersgt6/power/GTBatteryToolMod.java` | 付款（`ActiveToolMod.damageTool`）、待机充电、tooltip |
+| `src/main/java/com/tinkersgt6/mixin/late/ToolCoreEnergyMixin.java` | 给匠魂的 `ToolCore` 挂上 GT6 的 `IItemEnergy`，让电池盒能直接充（需要 UniMixins，见第六节） |
+| `src/main/java/com/tinkersgt6/util/MixinSupport.java` | 判断 mixin 是否生效；`CommonProxy.requireUniMixins()` 用它决定要不要阻止启动，其余地方用它决定走 mixin 版还是事件版实现 |
 
 ---
 
@@ -37,7 +39,7 @@
 2. **价钱由我们说了算。**
    写了 `Energy` 键就等于把每一次花费的定价权交给 `damageEnergyTool` 的 `trueSpeed * 2.8` 公式 —— 它按工具的挖掘速度算钱，既看不见电压也看不见 GT 的 `toolDamagePerBlockBreak = 100`（`ToolStats.java:63`）。
 3. **`ToolCore.receiveEnergy` 那条路走不通。**
-   充它要 CoFH API，而我们要的是 GT 的机械/变压器/电池。`ToolCore` 是写死的 final 类层级，无法替一个 addon 加上 `IItemEnergy`。
+   充它要 CoFH API，而我们要的是 GT 的机械/变压器/电池。`ToolCore` 是写死的类层级，addon 无法给它加接口 —— 除非走 mixin（见第六节）：`ToolCoreEnergyMixin` 在加载期把 `IItemEnergy` 挂到 `ToolCore` 上，子类全部继承。
 
 所以：保留" root NBT 存电 + 在唯一漏斗里付款"的**形状**，键名换成我们自己的（绝不能叫 `Energy`，否则会和 RF 那条链撞车），价钱和电压规则自己实现。
 
@@ -96,6 +98,7 @@ return useEnergy(TD.Energy.EU, aStack, aAmount, ...);   // 只扣电
 | `batteryMinCapacity` | power | `1` | 容量低于此值的电池不允许安装 |
 | `batteryAllowUpgrade` | power | `true` | 允许换成更大的电池，且不额外花升级槽 |
 | `mazebreaker` / `mazebreakerSpeedMultiplier` / `mazebreakerDrops` | general | `true` / `40` / `true` | MazeBreaker 材料特性，见 `compat/MazeBreakerCompat.java` |
+| `requireUniMixins` | general | `true` | 缺少 UniMixins 时报错并中止启动；置 `false` 才会带着"没有电池盒充电、没有 MazeBreaker 提速"启动 |
 
 ---
 
@@ -167,8 +170,54 @@ charge   = getEnergyStored(TD.Energy.EU, stack)
 
 ## 五、已知限制
 
-1. **不能用 GT6 的机械/变压器直接给工具充电。** GT 的充电机看的是 `IItemEnergy` 实现，而 `ToolCore` 是写死的类我们不能扩展；唯一可行的补电方式是快捷栏里的电池（默认开启，`batteryRechargeFromHotbar`）。
+1. **用 GT6 的电池盒充电一定需要 UniMixins。** `ToolCoreEnergyMixin` 给 `ToolCore` 挂上 `IItemEnergy` 之后，电池盒/充电器会把它当成一节电池（`canInsertItem2` 的 `instanceof IItemEnergy` 判断放行，每秒的 `doEnergyInjection` 直接到账）。这条路没有第二种写法，所以 UniMixins 现在是**前置**而不是可选增强：启动时检查（见第六节），没有就中止。装了但注入失败（匠魂版本变了）时不中止，只是没有电池盒充电，也不再显示那行 tooltip。
 2. **安装后不可卸下。** 匠魂的改装系统没有"移除改装"这个概念；换更大的电池会把旧电量累加进新容量。
 3. **一把工具只能有一种电池来源。** 如果工具已经装了匠魂自己的 RF 升级（根 tag 上有 `Energy`），我们的改装项不会匹配，避免两条付款链打架。
 4. **电量耗光后工具会重新开始扣耐久。** 见上面"与 GT6 的偏差"。
 5. **快捷栏补电要求电池独占一格。** `EnergyStat.doEnergyExtraction` 要求 `stackSize == 1`，堆成一堆的电池不会被扣。
+
+---
+
+## 六、mixin 是怎么接进去的
+
+### 为什么必须是"late" mixin
+
+Mixin 自己的所有阶段都发生在 Forge 发现普通 mod 之前，那时匠魂的类还不在 classpath 上。UniMixins 的 GTNHMixins 模块补了一个 **late 阶段**：FML 开始构造 mod 之前触发，此时所有 mod 都已被发现，但匠魂还没到 preInit（工具是在 preInit 注册的）—— 正好够我们对 `ToolCore` 动手。
+
+于是我们：
+
+- 写一个 `@LateMixin` + `ILateMixinLoader` 的装载器（`com.tinkersgt6.mixin.TinkersGT6LateMixins`），由 GTNHMixins 用 FML 的注解扫描发现（不依赖 jar 清单）；
+- 配置 `src/main/resources/mixins.tinkersforgt6.late.json`，实际要加载哪些 mixin 由装载器在运行时按"匠魂在不在"决定；
+- 两个 mixin 都标 `remap = false`：目标是匠魂的类而不是 MC 的类，混淆映射表里没有它们，按名字匹配即可。
+
+### 为什么没开构建脚本自带的 `usesMixins`
+
+这个开关只管"mixin 怎么注册"，不管"能不能跑"——UniMixins 现在是硬前置，两种方式下缺了都不行。
+
+打开它会往清单里写 `TweakClass: org.spongepowered.asm.launch.MixinTweaker`，而 FML（`CoreModManager:336`）会把每个 `TweakClass` 交给 LaunchWrapper 在启动时实例化；这条路径能瞄准的只有 core mod，匠魂的类同样看不见，对我们来说只是在注解扫描之外多一条重复注册路径，所以仍然关着。
+
+关掉它之后的代价只有两条，都已经在 `dependencies.gradle` 里处理掉了：没有 Mixin 注解处理器（我们用不到，因为两个 mixin 都是 `remap = false`），以及 UniMixins 要自己声明成 `compileOnly` + `runtimeOnly`（编译用、开发运行用、并且作为运行时依赖发布出去）。GTNHMixins 靠注解扫描发现装载器，清单里有没有那条属性它都不在乎。
+
+### 接口怎么回答
+
+| 方法 | 回答 | 理由 |
+|---|---|---|
+| `isEnergyType` | 只有 EU、只有"接收"、且装了电池才 true | 没装电池的工具对任何 GT 机器都不是能源物品 |
+| `canEnergyExtraction` / `doEnergyExtraction` | 恒 false / 0 | 电池盒自己缺电时会**反向抽**格子里的电池（`TileEntityBase10EnergyBatBox:111-112`）；不拒绝的话插着的工具会被抽干 |
+| `doEnergyInjection` | 按 `[size/2, size*2]` 窗口收包，写 `TG6.EU`，返回实际包数 | 与 `EnergyStat` 同规则，电压不对的充电器充不进来 |
+| `getEnergySize*` | 接收侧按安装时的电压给，输出侧全 0 | 工具只进不出 |
+| 其余 | 与 `GTBattery` 的 NBT 完全一致 | 快捷栏补电和电池盒充电必须可互换 |
+
+### UniMixins 是前置，怎么落地
+
+UniMixins 从来不是一个 `@Mod`：它注册的是 core mod 和 mixin service，Forge 的依赖检查只看自己的 mod 列表，所以 `requiredMods` / `dependencies` 都写不进它，写出来只会让 FML 判定"缺 mod"然后报一句谁也看不懂的话。真正起作用的有三处：
+
+| 位置 | 作用 |
+|---|---|
+| `dependencies.gradle` | `compileOnly` + `runtimeOnly("io.github.legacymoddingmc:unimixins:0.3.1:dev")`：编译时、开发运行时都在，且作为运行时依赖发布出去 |
+| `README` 的 Requirements 表 / `gradle.properties` 的 `curseForgeRelations`、`modrinthRelations` | 让人在下载之前就知道要装；包管理器侧也会列为必装 |
+| `CommonProxy.requireUniMixins()` | 缺了就在 preInit 报错并中止，错误信息里带下载链接 |
+
+判定靠 `MixinSupport.lateMixins()`（`Class.forName("com.gtnewhorizon.gtnhmixins.GTNHMixins")`）——问的是提供 GTNHMixins 的那个类，而不是某个 mod id。
+
+把 `requireUniMixins` 置 `false` 就可以强行启动，此时 mixin 包里的类一个都不会被加载：电池盒充电消失（tooltip 那行也不显示），MAZEBREAKER 的提速退回 `PlayerEvent.BreakSpeed` 事件实现，其余功能不受影响。

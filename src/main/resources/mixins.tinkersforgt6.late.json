@@ -1,0 +1,8 @@
+{
+  "required": false,
+  "package": "com.tinkersgt6.mixin.late",
+  "target": "@env(DEFAULT)",
+  "minVersion": "0.8",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": []
+}

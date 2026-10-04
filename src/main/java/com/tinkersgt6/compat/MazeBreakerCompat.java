@@ -18,6 +18,7 @@ import net.minecraftforge.event.world.BlockEvent;
 
 import com.tinkersgt6.config.TGConfig;
 import com.tinkersgt6.material.MaterialRegistry;
+import com.tinkersgt6.util.MixinSupport;
 import com.tinkersgt6.util.TinkersGT6Log;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -70,31 +71,68 @@ public class MazeBreakerCompat {
     /** TConstruct material ID -> head material carries the trait; the BreakSpeed handler runs every tick. */
     private static final Map<Integer, Boolean> HEADS = new HashMap<>();
 
+    /**
+     * Whether the mining speed comes from our own mixin into {@code HarvestTool.getDigSpeed}.
+     *
+     * <p>
+     * When it does, the {@link PlayerEvent.BreakSpeed} handler below must stay unregistered: Forge raises that event
+     * with
+     * the speed {@code getDigSpeed} returned, so applying the multiplier twice would hand out x1600 instead of x40.
+     * GTNH
+     * Mixins being present is used as the signal - it is the module that queues the mixin, and when it is missing
+     * nothing
+     * has transformed TConstruct, so the event has to do the job on its own.
+     * </p>
+     */
+    private static boolean speedComesFromMixin() {
+        return MixinSupport.lateMixins();
+    }
+
     public static void register() {
         if (!MD.TF.mLoaded || !TGConfig.mazeBreaker()) return;
-        MinecraftForge.EVENT_BUS.register(new MazeBreakerCompat());
+
+        MazeBreakerCompat instance = new MazeBreakerCompat();
+        MinecraftForge.EVENT_BUS.register(instance);
+
+        boolean byMixin = speedComesFromMixin();
+        if (!byMixin) MinecraftForge.EVENT_BUS.register(new SpeedFallback());
+
         TinkersGT6Log.info(
             "MazeBreaker enabled for " + mazeBlocks().size()
                 + " Twilight Forest block(s) at x"
                 + TGConfig.mazeBreakerSpeedMultiplier()
-                + (TGConfig.mazeBreakerDrops() ? ", keeps their drops." : " (drops left to vanilla)."));
+                + (byMixin ? " (speed applied inside TConstruct)." : " (speed applied from the break speed event).")
+                + (TGConfig.mazeBreakerDrops() ? " Keeps their drops." : " Drops left to vanilla."));
+    }
+
+    /**
+     * Only used when no mixin loader is installed. Kept separate so that the event listener is simply never created
+     * when
+     * the mixin is doing the work.
+     */
+    private static final class SpeedFallback {
+
+        @SubscribeEvent
+        public void onBreakSpeed(PlayerEvent.BreakSpeed event) {
+            if (event == null || event.entityPlayer == null) return;
+
+            ItemStack stack = event.entityPlayer.getCurrentEquippedItem();
+            if (!hasMazeBreaker(stack)) return;
+            if (!isMazeBlock(event.block)) return;
+
+            float multiplier = speedMultiplier();
+            if (multiplier <= 1.0F) return;
+            event.newSpeed = event.originalSpeed * multiplier;
+        }
     }
 
     /* ------------------------------------------------------------------ */
     /* mining speed */
     /* ------------------------------------------------------------------ */
 
-    @SubscribeEvent
-    public void onBreakSpeed(PlayerEvent.BreakSpeed event) {
-        if (event == null || event.entityPlayer == null) return;
-
-        ItemStack stack = event.entityPlayer.getCurrentEquippedItem();
-        if (!hasMazeBreaker(stack)) return;
-        if (!isMazeBlock(event.block)) return;
-
-        float multiplier = (float) TGConfig.mazeBreakerSpeedMultiplier();
-        if (multiplier <= 1.0F) return;
-        event.newSpeed = event.originalSpeed * multiplier;
+    /** The configured multiplier, as a float the mixin and the fallback can both use. */
+    public static float speedMultiplier() {
+        return (float) TGConfig.mazeBreakerSpeedMultiplier();
     }
 
     /* ------------------------------------------------------------------ */
@@ -104,6 +142,10 @@ public class MazeBreakerCompat {
     @SubscribeEvent
     public void onBlockBreak(BlockEvent.BreakEvent event) {
         if (!TGConfig.mazeBreakerDrops()) return;
+
+        // Someone else already refused this break - a protection or claim mod, most likely. Breaking the block after
+        // them, which is what cancelling and re-doing it would amount to, would defeat whatever they decided.
+        if (event.isCanceled()) return;
 
         World world = event.world;
         if (world == null || world.isRemote) return; // the server owns drops and blocks
@@ -128,7 +170,8 @@ public class MazeBreakerCompat {
      * Removes the block and pays out what a successful harvest would have given.
      *
      * <p>
-     * Everything here follows {@code ItemInWorldManager.tryHarvestBlock} - including the order - except that the block is
+     * Everything here follows {@code ItemInWorldManager.tryHarvestBlock} - including the order - except that the block
+     * is
      * removed with {@code canHarvest = true} even though vanilla would have passed {@code false}. Tool damage and the
      * {@code onBlockStartBreak} veto come first because that is what vanilla does before touching the block, and both
      * are what other addons hook into.
@@ -136,7 +179,10 @@ public class MazeBreakerCompat {
      */
     private static void harvest(World world, EntityPlayer player, ItemStack stack, Block block, int meta, int x, int y,
         int z, int expFromEvent) {
-        if (stack != null && stack.getItem().onBlockStartBreak(stack, x, y, z, player)) return;
+        if (
+            stack != null && stack.getItem()
+                .onBlockStartBreak(stack, x, y, z, player)
+        ) return;
 
         world.playAuxSFXAtEntity(player, 2001, x, y, z, Block.getIdFromBlock(block) + (meta << 12));
 
@@ -207,7 +253,7 @@ public class MazeBreakerCompat {
     /* identification */
     /* ------------------------------------------------------------------ */
 
-    private static boolean isMazeBlock(Block block) {
+    public static boolean isMazeBlock(Block block) {
         return block != null && mazeBlocks().containsKey(block);
     }
 
@@ -234,7 +280,7 @@ public class MazeBreakerCompat {
      * @return true when the tool's head material carries the trait. Cached per TConstruct material ID because
      *         {@link PlayerEvent.BreakSpeed} fires once per tick per mining player.
      */
-    private static boolean hasMazeBreaker(ItemStack stack) {
+    public static boolean hasMazeBreaker(ItemStack stack) {
         if (stack == null || !(stack.getItem() instanceof ToolCore)) return false;
         if (stack.stackTagCompound == null) return false;
 

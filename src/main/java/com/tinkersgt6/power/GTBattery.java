@@ -14,6 +14,7 @@ import gregapi.data.IL;
 import gregapi.data.TD;
 import gregapi.item.IItemEnergy;
 import gregapi.util.ST;
+import tconstruct.library.tools.ToolCore;
 
 /**
  * The charge a battery-upgraded TConstruct tool carries, and how a GT6 battery is recognised.
@@ -21,7 +22,8 @@ import gregapi.util.ST;
  * <p>
  * GregTech exposes everything about an energy carrying stack through {@link IItemEnergy}, which every GT6 energy item
  * implements - both the classic {@code MultiItem} gadgets and the later multi-tile-entity ones such as the Power Cells,
- * whose item delegates straight to the tile entity. Nothing here inspects item classes: capacity, charge and packet size
+ * whose item delegates straight to the tile entity. Nothing here inspects item classes: capacity, charge and packet
+ * size
  * come from the interface, so a battery from another addition implementing the same interface works too.
  * </p>
  *
@@ -30,14 +32,16 @@ import gregapi.util.ST;
  * </p>
  * <ul>
  * <li><b>capacity</b> - how much EU fits, {@code getEnergyCapacity}.</li>
- * <li><b>size</b> - the recommended input packet size, which in GT6 <em>is</em> the voltage: 32 for LV, 128 for MV and so
+ * <li><b>size</b> - the recommended input packet size, which in GT6 <em>is</em> the voltage: 32 for LV, 128 for MV and
+ * so
  * on. A source battery only accepts a transfer inside {@code [size/2, size*2]}, so this single number is what makes a
  * tool "an LV tool" and keeps an LV charger from filling a tool built around something else.</li>
  * <li>the charge itself, which starts as whatever was inside the battery at the moment it was built in.</li>
  * </ul>
  *
  * <p>
- * The NBT keys are deliberately <em>not</em> {@code Energy}: that one belongs to TConstruct's own Redstone Flux upgrade,
+ * The NBT keys are deliberately <em>not</em> {@code Energy}: that one belongs to TConstruct's own Redstone Flux
+ * upgrade,
  * and writing it would hand every durability hit to {@code AbilityHelper.damageEnergyTool}, which decides its own price
  * per hit and pays nothing to us.
  * </p>
@@ -116,6 +120,10 @@ public final class GTBattery {
     }
 
     private static Spec classify(ItemStack stack, Item item) {
+        // A battery-upgraded tool is an IItemEnergy itself (see ToolCoreEnergyMixin), so without this a second tool in
+        // the hotbar would look like a battery and be drained to refill the one in hand.
+        if (item instanceof ToolCore) return spec(Kind.NOT_ENERGY_ITEM, 0, 0);
+
         // GregTech's own identifiers are checked first: these four are easy to recognise and all of them are on hold.
         if (IL.ZPM.equal(stack, true, true)) return spec(Kind.ZPM, 0, 0);
         if (IL.Power_Cell_Empty.equal(stack, true, true) || IL.Power_Cell_H.equal(stack, true, true))
@@ -172,8 +180,10 @@ public final class GTBattery {
 
     public static boolean installed(ItemStack stack) {
         if (stack == null || stack.stackTagCompound == null) return false;
-        if (!stack.stackTagCompound.getCompoundTag("InfiTool")
-            .getBoolean(KEY_INSTALLED)) return false;
+        if (
+            !stack.stackTagCompound.getCompoundTag("InfiTool")
+                .getBoolean(KEY_INSTALLED)
+        ) return false;
         return stack.stackTagCompound.getLong(NBT_CAPACITY) > 0;
     }
 
@@ -190,6 +200,45 @@ public final class GTBattery {
         if (stack == null || stack.stackTagCompound == null) return 0;
         long size = stack.stackTagCompound.getLong(NBT_SIZE);
         return size > 0 ? size : 0;
+    }
+
+    /**
+     * GregTech's own rule, copied from {@code EnergyStat}: a battery accepts packets between half and twice its size,
+     * and never below one EU.
+     */
+    public static long sizeMin(ItemStack stack) {
+        long size = size(stack);
+        return size <= 0 ? 0 : size <= 8 ? 1 : size / 2;
+    }
+
+    public static long sizeMax(ItemStack stack) {
+        long size = size(stack);
+        return size <= 0 ? 0 : size * 2;
+    }
+
+    public static boolean accepts(ItemStack stack, long size) {
+        return installed(stack) && stack.stackSize == 1
+            && size >= sizeMin(stack)
+            && size <= sizeMax(stack)
+            && stored(stack) < capacity(stack);
+    }
+
+    /**
+     * The receiving half of {@code IItemEnergy}: how many packets of {@code size} EU fit, and - only when asked -
+     * writing
+     * them in. This is what a GregTech battery box calls once per second for every item in its inventory.
+     *
+     * @return the number of packets taken in, which GregTech multiplies by the packet size to bill the machine.
+     */
+    public static long inject(ItemStack stack, long size, long packets, boolean doInject) {
+        if (!accepts(stack, size) || size <= 0 || packets <= 0) return 0;
+
+        long room = (capacity(stack) - stored(stack)) / size;
+        long taken = Math.min(packets, room);
+        if (taken <= 0) return 0;
+
+        if (doInject) setStored(stack, stored(stack) + taken * size);
+        return taken;
     }
 
     public static void install(ItemStack tool, long capacity, long size, long charge) {

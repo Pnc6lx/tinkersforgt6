@@ -143,8 +143,10 @@ public class GTBatteryModifier extends ItemModifier {
         if (input == null) return null;
         for (ItemStack stack : input) {
             if (ST.invalid(stack)) continue;
-            if (GTBattery.inspect(stack)
-                .usable()) return stack;
+            if (
+                GTBattery.inspect(stack)
+                    .usable()
+            ) return stack;
         }
         return null;
     }

@@ -4,7 +4,7 @@
     {
       "modid": "${modId}",
       "name": "${modName}",
-      "description": "Bridges GregTech 6 materials into Tinker's Construct: registers every GT6 tool material as a TConstruct tool material and exposes GT6 material enchantments as an always-on material trait.",
+      "description": "Bridges GregTech 6 materials into Tinker's Construct: registers every GT6 tool material as a TConstruct tool material, exposes GT6 material enchantments as an always-on material trait, lets tools run on GregTech EU, and carries over GT6's MazeBreaker and tool-interaction behaviour. Requires UniMixins 0.3.1 or newer.",
       "version": "${modVersion}",
       "mcversion": "${minecraftVersion}",
       "url": "",

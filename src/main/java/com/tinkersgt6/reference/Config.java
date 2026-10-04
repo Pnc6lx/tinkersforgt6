@@ -41,6 +41,9 @@ public final class Config {
     public static final String MAZE_BREAKER_SPEED = "mazebreakerSpeedMultiplier";
     public static final String MAZE_BREAKER_DROPS = "mazebreakerDrops";
 
+    /* ---- general (UniMixins prerequisite) ---- */
+    public static final String REQUIRE_UNIMIXINS = "requireUniMixins";
+
     /* ---- recipes ---- */
     public static final String PART_RECIPE_EUT = "partRecipeEUt";
     public static final String PART_RECIPE_DURATION_PER_POINT = "partRecipeDurationPerPoint";

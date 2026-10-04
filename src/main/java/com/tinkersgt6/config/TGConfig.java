@@ -112,14 +112,13 @@ public class TGConfig {
                 "Exempt the tool rods registered by this mod from GregTech's OreDict unification, so a handle in the"
                     + " inventory is never silently swapped for a GregTech stick.")
             .getBoolean();
-        config
-            .get(
-                Config.CAT_GENERAL,
-                Config.TOOL_CLICK_COMPAT,
-                true,
-                "Let TConstruct tools trigger GregTech's tool interactions when right-clicking GregTech blocks, the same"
-                    + " way a GregTech tool would: a Shovel pulls the waste out of a Crucible, Smeltery or solid"
-                    + " Generator, and a Chisel carves a Mold or cleans Boiler Coke.")
+        config.get(
+            Config.CAT_GENERAL,
+            Config.TOOL_CLICK_COMPAT,
+            true,
+            "Let TConstruct tools trigger GregTech's tool interactions when right-clicking GregTech blocks, the same"
+                + " way a GregTech tool would: a Shovel pulls the waste out of a Crucible, Smeltery or solid"
+                + " Generator, and a Chisel carves a Mold or cleans Boiler Coke.")
             .getBoolean();
         config
             .get(
@@ -168,6 +167,16 @@ public class TGConfig {
                 "Take over breaking those blocks whenever vanilla would drop nothing because the tool's harvest level"
                     + " is below what the block asks for - otherwise the block disappears without loot even though it"
                     + " can still be mined.")
+            .getBoolean();
+        config
+            .get(
+                Config.CAT_GENERAL,
+                Config.REQUIRE_UNIMIXINS,
+                true,
+                "Treat UniMixins as a prerequisite and refuse to start without it. Two of the features - the GregTech"
+                    + " battery upgrade and MazeBreaker's mining speed - can only be done through mixins, so installing"
+                    + " UniMixins is not optional in practice. Set this to false only when you knowingly accept losing"
+                    + " both; everything that can fall back to a plain Forge event still does.")
             .getBoolean();
     }
 
@@ -395,6 +404,14 @@ public class TGConfig {
             Config.MAZE_BREAKER_SPEED,
             40.0,
             "Mining speed multiplier a MazeBreaker tool gets on the three maze blocks. GregTech uses 40.");
+    }
+
+    public static boolean requireUniMixins() {
+        return getBoolean(
+            Config.CAT_GENERAL,
+            Config.REQUIRE_UNIMIXINS,
+            true,
+            "Fail the launch when UniMixins is missing instead of running with reduced features.");
     }
 
     public static boolean mazeBreakerDrops() {

@@ -22,6 +22,10 @@ public final class TinkersGT6Log {
         LOG.warn(message);
     }
 
+    public static void error(String message) {
+        LOG.error(message);
+    }
+
     public static void error(String message, Throwable t) {
         LOG.error(message, t);
     }

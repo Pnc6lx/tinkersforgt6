@@ -79,8 +79,7 @@ public class ToolClickCompat {
     public static void register() {
         if (!TGConfig.toolClickCompat()) return;
         MinecraftForge.EVENT_BUS.register(new ToolClickCompat());
-        TinkersGT6Log
-            .info("TConstruct tools answer to GregTech tool interactions (" + describe() + ").");
+        TinkersGT6Log.info("TConstruct tools answer to GregTech tool interactions (" + describe() + ").");
     }
 
     private static String describe() {
@@ -133,8 +132,23 @@ public class ToolClickCompat {
             List<String> chat = new ArrayList<>();
             long damage;
             try {
-                damage = IBlockToolable.Util
-                    .onToolClick(tool, remaining, quality, player, chat, player.inventory, player.isSneaking(), stack, world, aim.side, event.x, event.y, event.z, aim.hitX, aim.hitY, aim.hitZ);
+                damage = IBlockToolable.Util.onToolClick(
+                    tool,
+                    remaining,
+                    quality,
+                    player,
+                    chat,
+                    player.inventory,
+                    player.isSneaking(),
+                    stack,
+                    world,
+                    aim.side,
+                    event.x,
+                    event.y,
+                    event.z,
+                    aim.hitX,
+                    aim.hitY,
+                    aim.hitZ);
             } catch (RuntimeException e) {
                 TinkersGT6Log.debug("GregTech rejected tool '" + tool + "': " + e);
                 return;
@@ -257,7 +271,12 @@ public class ToolClickCompat {
         Vec3 end = start.addVector(look.xCoord * REACH, look.yCoord * REACH, look.zCoord * REACH);
         MovingObjectPosition hit = world.rayTraceBlocks(start, end);
 
-        if (hit != null && hit.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK && hit.blockX == x && hit.blockY == y && hit.blockZ == z) {
+        if (
+            hit != null && hit.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK
+                && hit.blockX == x
+                && hit.blockY == y
+                && hit.blockZ == z
+        ) {
             return new Aim(
                 (byte) hit.sideHit,
                 (float) (hit.hitVec.xCoord - x),
@@ -271,17 +290,25 @@ public class ToolClickCompat {
     private static Aim fallback(int face) {
         byte side = face >= 0 && face <= 5 ? (byte) face : 6; // 6 is what GregTech reads as "no specific side"
         switch (face) {
-            case 0: return new Aim(side, 0.5F, 0.0F, 0.5F);
-            case 1: return new Aim(side, 0.5F, 1.0F, 0.5F);
-            case 2: return new Aim(side, 0.5F, 0.5F, 0.0F);
-            case 3: return new Aim(side, 0.5F, 0.5F, 1.0F);
-            case 4: return new Aim(side, 0.0F, 0.5F, 0.5F);
-            case 5: return new Aim(side, 1.0F, 0.5F, 0.5F);
-            default: return new Aim(side, 0.5F, 0.5F, 0.5F);
+            case 0:
+                return new Aim(side, 0.5F, 0.0F, 0.5F);
+            case 1:
+                return new Aim(side, 0.5F, 1.0F, 0.5F);
+            case 2:
+                return new Aim(side, 0.5F, 0.5F, 0.0F);
+            case 3:
+                return new Aim(side, 0.5F, 0.5F, 1.0F);
+            case 4:
+                return new Aim(side, 0.0F, 0.5F, 0.5F);
+            case 5:
+                return new Aim(side, 1.0F, 0.5F, 0.5F);
+            default:
+                return new Aim(side, 0.5F, 0.5F, 0.5F);
         }
     }
 
     private static final class Aim {
+
         final byte side;
         final float hitX, hitY, hitZ;
 
@@ -298,6 +325,7 @@ public class ToolClickCompat {
     /* ------------------------------------------------------------------ */
 
     private static final class ClickProfile {
+
         final List<String> tools;
 
         ClickProfile(String... tools) {

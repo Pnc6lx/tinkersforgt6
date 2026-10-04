@@ -16,6 +16,7 @@ import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 
 import com.tinkersgt6.config.TGConfig;
 import com.tinkersgt6.material.MaterialRegistry;
+import com.tinkersgt6.util.MixinSupport;
 import com.tinkersgt6.util.TinkersGT6Log;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -40,7 +41,8 @@ import tconstruct.library.tools.ToolCore;
  * </p>
  * <ul>
  * <li><b>{@code ENERGY_ONLY}</b> - the charge pays, the tool never wears. What TConstruct's own Flux upgrade does.</li>
- * <li><b>{@code ENERGY_AND_DURABILITY}</b> - the charge pays and, on top of that, durability is taken with the very odds
+ * <li><b>{@code ENERGY_AND_DURABILITY}</b> - the charge pays and, on top of that, durability is taken with the very
+ * odds
  * GregTech uses for its electric tools: {@code MultiItemTool.doDamage} applies the durability roll only when
  * {@code nextInt(max(10, toolQuality * 20)) == 0}, so a good head material rarely wears while a poor one often does.
  * This is the default because it is what GregTech does.</li>
@@ -69,8 +71,7 @@ public class GTBatteryToolMod extends ActiveToolMod {
 
         String mode = TGConfig.batteryDurabilityMode();
         TinkersGT6Log.info(
-            "GregTech battery upgrade registered: tools pay "
-                + TGConfig.batteryEuPerDurability()
+            "GregTech battery upgrade registered: tools pay " + TGConfig.batteryEuPerDurability()
                 + " EU per durability point, mode "
                 + mode
                 + (TGConfig.batteryRechargeFromHotbar() ? ", charging from EU batteries in the hotbar." : "."));
@@ -191,6 +192,12 @@ public class GTBatteryToolMod extends ActiveToolMod {
                     + UT.Code.makeString(size)
                     + EnumChatFormatting.DARK_GRAY
                     + ")");
+        }
+
+        // Only true when a mixin loader let us put IItemEnergy on TConstruct's tools - without it a GregTech battery
+        // box does not recognise the tool at all, so promising it here would be a lie.
+        if (MixinSupport.lateMixins()) {
+            event.toolTip.add(EnumChatFormatting.DARK_GRAY + "Takes EU from a GregTech battery box");
         }
     }
 }

@@ -11,6 +11,7 @@ Based on the [GTNH ExampleMod1.7.10](https://github.com/GTNewHorizons/ExampleMod
 * [Tinker's For Gregtech 6](#tinkers-for-gregtech-6)
     * [Motivation](#motivation)
     * [Help! I'm stuck!](#help-im-stuck)
+    * [Requirements](#requirements)
     * [Getting started](#getting-started)
     * [Features](#features)
     * [Files](#files)
@@ -27,6 +28,24 @@ We had our fair share in struggles with build scripts for Minecraft Forge. There
 ### Help! I'm stuck!
 
 We all have been there! Check out our [FAQ](docs/FAQ.md). If that doesn't help, please open an issue.
+
+### Requirements
+
+Install these next to `Tinker's For Gregtech 6` in the `mods` folder, in this order of loading:
+
+| Mod | Version | Why |
+| --- | --- | --- |
+| [GregTech 6](https://gregtech.mechaenetia.com/) | 6.17.06 | Every material, stat and tool behaviour this addon forwards comes from GT6. Hard requirement: we depend on `gregapi`. |
+| [Tinker's Construct](https://github.com/GTNewHorizons/TinkersConstruct) (GTNH fork) + Mantle | 1.14.117-GTNH / 0.5.4 | Consumes everything we register. Hard requirement, loads after us. |
+| [UniMixins](https://github.com/LegacyModdingMC/UniMixins) | 0.3.1 or newer | **Hard requirement.** Two features - the GregTech battery upgrade and MazeBreaker's mining speed - reach into TConstruct classes, which only a mixin can do, and there is no fallback for either. |
+| TwilightForest | any | Optional. Without it MazeBreaker has nothing to be fast on and the trait stays dormant. |
+| Iguana Tweaks for Tinker's Construct | any | Optional. Adds eight harvest levels, which we scale GT6 material qualities up into. |
+
+UniMixins ships no mod id, so Forge's dependency check cannot ask for it and would let you start without it - nothing
+would even warn. We refuse the launch instead and say what is missing. It is declared in `dependencies.gradle` too, and
+as a relation on CurseForge / Modrinth, so a pack install asks for it as well. Set `requireUniMixins=false` in
+`config/tinkersforgt6.cfg` only if you really want to run without those two features; everything that can be done with
+plain Forge events still works then.
 
 ### Getting started
 
@@ -90,6 +109,11 @@ To enable Mixins in your project, follow one of the example commits:
 - use [normal mixins](https://github.com/GTNewHorizons/ExampleMod1.7.10/commit/beba55615fa8337b7639f0d5b18db6cc8d4826be) for basic and quick registration
 - use [GTNH IMixins](https://github.com/GTNewHorizons/ExampleMod1.7.10/commit/055cd4f18765a421a86c706f53b62116988297e3) (recommended) for the same thing as below, but in a less verbose and more unified manner using the IMixins api
 - use [GTNH Early/Late mixins](https://github.com/GTNewHorizons/ExampleMod1.7.10/commit/c4df59d92164775b69451f3e690239e93d1fc979) to have full control over the registration logic and check for presence of other mods during runtime to load your mixins
+
+This mod takes the third route: UniMixins' GTNHMixins module discovers `com.tinkersgt6.mixin.TinkersGT6LateMixins`
+through its `@LateMixin` annotation, which is the only phase whose targets include another mod's classes. That is also
+why UniMixins is listed under [Requirements](#requirements) instead of a recommendation - see `dependencies.gradle` for
+the dependency and `gradle.properties` (`usesMixins`) for why the build script's own mixin switch stays off.
 
 The extra required dependencies are handled automatically after mixins are enabled.
 
